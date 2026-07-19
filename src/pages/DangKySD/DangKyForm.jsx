@@ -329,9 +329,15 @@ export default function DangKyForm() {
       {showModal && (
         <div className="modal-overlay" style={{ zIndex: 9999 }}>
           <div className="modal-content" style={{ maxWidth: '600px', width: '100%', height: '80vh', display: 'flex', flexDirection: 'column' }}>
-            <div className="modal-header">
-              <h3 style={{ margin: 0 }}>Chọn vật tư y tế</h3>
-              <button className="btn-close" type="button" onClick={() => setShowModal(false)}><X size={20} /></button>
+            <div className="modal-header" style={{ padding: '12px 16px' }}>
+              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '1.1rem' }}>
+                Chọn VTYT 
+                {checkedIds.size > 0 && <span style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 'bold' }}>({checkedIds.size})</span>}
+              </h3>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button type="button" className="btn btn-secondary btn-sm" style={{ padding: '4px 12px' }} onClick={() => setShowModal(false)}>Huỷ</button>
+                <button type="button" className="btn btn-primary btn-sm" style={{ padding: '4px 12px' }} onClick={handleConfirmSelection}>Xác nhận</button>
+              </div>
             </div>
             
             <div style={{ padding: '16px', borderBottom: '1px solid var(--border)' }}>
@@ -373,13 +379,7 @@ export default function DangKyForm() {
               </div>
             </div>
 
-            <div className="modal-footer" style={{ borderTop: '1px solid var(--border)', padding: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', color: 'var(--primary)', fontWeight: '500' }}>
-                Đã chọn: {checkedIds.size}
-              </div>
-              <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Hủy</button>
-              <button type="button" className="btn btn-primary" onClick={handleConfirmSelection}>Xác nhận</button>
-            </div>
+
           </div>
         </div>
       )}
