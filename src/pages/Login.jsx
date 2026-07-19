@@ -35,22 +35,7 @@ export default function Login() {
     setAuthLoading(false);
   };
 
-  const handleQuickLogin = async (demoUsername) => {
-    setErrorMsg('');
-    setAuthLoading(true);
-    setUsername(demoUsername);
-    setPassword('password123');
-    
-    const email = `${demoUsername}@example.com`;
-    const result = await login(email, 'password123');
-    
-    if (result.success) {
-      navigate('/');
-    } else {
-      setErrorMsg(result.error?.message || 'Lỗi đăng nhập nhanh');
-    }
-    setAuthLoading(false);
-  };
+
 
   return (
     <div className="login-container">
@@ -106,34 +91,6 @@ export default function Login() {
           >
             {authLoading ? 'Đang xác thực...' : 'Đăng nhập'}
           </button>
-        </form>
-
-        <div className="demo-logins">
-          <div className="demo-logins-title">Đăng nhập nhanh (Tài khoản Demo)</div>
-          <div className="demo-buttons-grid">
-            <button 
-              onClick={() => handleQuickLogin('nhanvien')} 
-              className="btn btn-secondary"
-              disabled={authLoading}
-            >
-              Nhân viên
-            </button>
-            <button 
-              onClick={() => handleQuickLogin('quanly')} 
-              className="btn btn-secondary"
-              disabled={authLoading}
-            >
-              Quản lý kho
-            </button>
-            <button 
-              onClick={() => handleQuickLogin('admin')} 
-              className="btn btn-secondary"
-              disabled={authLoading}
-            >
-              Admin
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

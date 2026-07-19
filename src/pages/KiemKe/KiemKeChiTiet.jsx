@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import { ArrowLeft, Trash2, Edit, X } from 'lucide-react';
+import { ArrowLeft, Trash2, Edit, X, Download } from 'lucide-react';
 
 export default function KiemKeChiTiet() {
   const { date } = useParams();
@@ -67,6 +67,31 @@ export default function KiemKeChiTiet() {
     navigate(`/kiem-ke/moi?editDate=${date}`);
   };
 
+  const handleExportCSV = () => {
+    const headers = ['Loại', 'Tên vật tư', 'Đơn vị tính', 'Cơ số', 'SL thực tế', 'Chờ lĩnh bù', 'Tổng số', 'Chênh lệch', 'Ghi chú'];
+    const rows = audits.map(a => [
+      a.loai_kiem_ke || 'Thủ công',
+      `"${(a.ten_vtyt || '').replace(/"/g, '""')}"`,
+      `"${a.dvt || ''}"`,
+      a.co_so,
+      a.sl_kiem_ke_thuc_te,
+      a.sl_da_su_dung_chua_linh,
+      a.tong_so_luong,
+      a.thua_thieu,
+      `"${(a.ghi_chu || '').replace(/"/g, '""')}"`
+    ]);
+    
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `KiemKe_${date.split('-').join('')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return (
       <div className="loading-screen">
@@ -102,13 +127,17 @@ export default function KiemKeChiTiet() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={handleDeleteDate}>
-            <Trash2 size={16} />
-            <span className="hide-mobile">Xóa phiếu</span>
+          <button className="btn btn-secondary" style={{ backgroundColor: '#10b981', color: 'white', borderColor: '#10b981' }} onClick={handleExportCSV} title="Xuất Excel">
+            <Download size={16} />
+            <span className="hide-mobile">Xuất Excel</span>
           </button>
           <button className="btn btn-primary" onClick={handleEditDate}>
             <Edit size={16} />
-            <span className="hide-mobile">Sửa phiếu</span>
+            <span className="hide-mobile">Sửa</span>
+          </button>
+          <button className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={handleDeleteDate}>
+            <Trash2 size={16} />
+            <span className="hide-mobile">Xóa</span>
           </button>
         </div>
       </div>
