@@ -22,6 +22,7 @@ export default function DangKyForm() {
   
   // Items state
   const [selectedItems, setSelectedItems] = useState([]); // [{ vat_tu_id, ten_vtyt, dvt, so_luong }]
+  const [originalItems, setOriginalItems] = useState([]);
   const [errorMsg, setErrorMsg] = useState('');
 
   // Modal state
@@ -94,10 +95,12 @@ export default function DangKyForm() {
                 vat_tu_id: row.vat_tu_id,
                 ten_vtyt: dm ? dm.ten_vtyt : 'Không xác định',
                 dvt: dm ? dm.dvt : '',
-                so_luong: row.so_luong
+                so_luong: row.so_luong,
+                da_linh: row.da_linh
               };
             });
             setSelectedItems(loadedItems);
+            setOriginalItems(loadedItems);
           }
         }
       } catch (err) {
@@ -180,6 +183,15 @@ export default function DangKyForm() {
 
     try {
       if (editMaPhieu) {
+        // Revert co_so for uncompensated items in originalItems
+        const revertPromises = originalItems.filter(item => !item.da_linh).map(async (item) => {
+          await supabase.rpc('cong_co_so', {
+            p_vat_tu_id: item.vat_tu_id,
+            p_so_luong: item.so_luong
+          });
+        });
+        await Promise.all(revertPromises);
+        
         // Xoá các vật tư cũ của mã phiếu này
         await supabase.from('dang_ky_sd').delete().eq('ma_phieu', editMaPhieu);
       }
@@ -200,6 +212,16 @@ export default function DangKyForm() {
         .insert(payloads);
 
       if (error) throw error;
+      
+      // Subtract co_so for new items
+      const deductPromises = payloads.map(async (item) => {
+        await supabase.rpc('tru_co_so', {
+          p_vat_tu_id: item.vat_tu_id,
+          p_so_luong: item.so_luong
+        });
+      });
+      await Promise.all(deductPromises);
+
       navigate('/dang-ky-su-dung');
     } catch (err) {
       setErrorMsg(err.message || 'Lỗi xảy ra khi lưu phiếu đăng ký');

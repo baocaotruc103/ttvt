@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import { Plus, Check, Search, Calendar, User, Edit, Trash2, List, FileText, Download } from 'lucide-react';
+import { Plus, Check, Search, Calendar, User, Edit, Trash2, List, FileText, Download, X } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
 import * as XLSX from 'xlsx';
 
@@ -19,6 +19,11 @@ export default function DangKyList() {
   const [filterStatus, setFilterStatus] = useState(initialFilter);
   const [searchTerm, setSearchTerm] = useState('');
   const [profilesMap, setProfilesMap] = useState({});
+  
+  // Modal Nhập bù
+  const [showNhapBuModal, setShowNhapBuModal] = useState(false);
+  const [nhapBuReg, setNhapBuReg] = useState(null);
+  const [nhapBuItems, setNhapBuItems] = useState([]);
 
   const fetchRegistrations = async () => {
     setLoading(true);
@@ -102,29 +107,71 @@ export default function DangKyList() {
     }
   };
 
-  const handleMarkAsLinh = async (maPhieu) => {
+  const handleOpenNhapBu = (reg) => {
+    setNhapBuReg(reg);
+    setNhapBuItems(reg.items.map(item => ({
+      ...item,
+      so_luong_nhap_bu: item.so_luong
+    })));
+    setShowNhapBuModal(true);
+  };
+  
+  const handleNhapBuChange = (id, value) => {
+    const numValue = value === '' ? '' : Number(value);
+    setNhapBuItems(prev => prev.map(item => 
+      item.id === id ? { ...item, so_luong_nhap_bu: numValue } : item
+    ));
+  };
+  
+  const handleConfirmNhapBu = async () => {
     try {
       const todayStr = new Date().toISOString().split('T')[0];
-      const { error } = await supabase
-        .from('dang_ky_sd')
-        .update({ da_linh: true, ngay_linh: todayStr })
-        .eq('ma_phieu', maPhieu);
-
-      if (error) throw error;
+      
+      const updatePromises = nhapBuItems.map(async (item) => {
+        const { error: updErr } = await supabase
+          .from('dang_ky_sd')
+          .update({ 
+            da_linh: true, 
+            ngay_linh: todayStr,
+            so_luong_nhap_bu: item.so_luong_nhap_bu 
+          })
+          .eq('id', item.id);
+        if (updErr) throw updErr;
+        
+        const { error: rpcErr } = await supabase.rpc('cong_co_so', {
+          p_vat_tu_id: item.vat_tu_id,
+          p_so_luong: item.so_luong_nhap_bu || 0
+        });
+        if (rpcErr) throw rpcErr;
+      });
+      
+      await Promise.all(updatePromises);
+      
+      setShowNhapBuModal(false);
       fetchRegistrations();
     } catch (err) {
-      console.error('Lỗi khi cập nhật:', err);
-      alert('Đã xảy ra lỗi khi lĩnh bù');
+      console.error(err);
+      alert('Đã xảy ra lỗi khi nhập bù');
     }
   };
 
-  const handleDeleteReg = async (maPhieu) => {
+  const handleDeleteReg = async (reg) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa phiếu đăng ký này? Tất cả vật tư trong phiếu sẽ bị xóa.')) return;
     try {
+      if (!reg.da_linh) {
+        const restorePromises = reg.items.map(async (item) => {
+          await supabase.rpc('cong_co_so', {
+            p_vat_tu_id: item.vat_tu_id,
+            p_so_luong: item.so_luong || 0
+          });
+        });
+        await Promise.all(restorePromises);
+      }
+      
       const { error } = await supabase
         .from('dang_ky_sd')
         .delete()
-        .eq('ma_phieu', maPhieu);
+        .eq('ma_phieu', reg.ma_phieu);
       if (error) throw error;
       fetchRegistrations();
     } catch (err) {
@@ -309,27 +356,27 @@ export default function DangKyList() {
                       <td data-label="Hành động">
                         {!reg.da_linh ? (
                           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                            <button 
-                              className="btn btn-primary btn-sm"
-                              style={{ padding: '4px 8px', gap: '4px' }}
-                              onClick={(e) => { e.stopPropagation(); handleMarkAsLinh(reg.ma_phieu); }}
-                              title="Đánh dấu đã lĩnh bù toàn bộ phiếu"
-                            >
-                              <Check size={14} />
-                              <span className="hide-mobile">Lĩnh bù</span>
-                            </button>
-                            
-                            <button 
-                              className="btn btn-secondary btn-sm btn-icon-only"
-                              onClick={(e) => { e.stopPropagation(); navigate(`/dang-ky-su-dung/moi?editMaPhieu=${reg.ma_phieu}`); }}
-                              title="Sửa phiếu"
-                            >
-                              <Edit size={14} />
-                            </button>
-                            <button 
-                              className="btn btn-outline btn-sm btn-icon-only"
-                              style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
-                              onClick={(e) => { e.stopPropagation(); handleDeleteReg(reg.ma_phieu); }}
+                              <button 
+                                className="btn btn-primary btn-sm"
+                                style={{ padding: '4px 8px', gap: '4px' }}
+                                onClick={(e) => { e.stopPropagation(); handleOpenNhapBu(reg); }}
+                                title="Đánh dấu đã nhập bù toàn bộ phiếu"
+                              >
+                                <Check size={14} />
+                                <span className="hide-mobile">Nhập bù</span>
+                              </button>
+                              
+                              <button 
+                                className="btn btn-secondary btn-sm btn-icon-only"
+                                onClick={(e) => { e.stopPropagation(); navigate(`/dang-ky-su-dung/moi?editMaPhieu=${reg.ma_phieu}`); }}
+                                title="Sửa phiếu"
+                              >
+                                <Edit size={14} />
+                              </button>
+                              <button 
+                                className="btn btn-outline btn-sm btn-icon-only"
+                                style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                                onClick={(e) => { e.stopPropagation(); handleDeleteReg(reg); }}
                               title="Xóa toàn bộ phiếu"
                             >
                               <Trash2 size={14} />
@@ -343,7 +390,58 @@ export default function DangKyList() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {showNhapBuModal && (
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="modal-content" style={{ maxWidth: '600px', width: '100%', display: 'flex', flexDirection: 'column', maxHeight: '80vh' }}>
+            <div className="modal-header" style={{ padding: '12px 16px' }}>
+              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '1.1rem' }}>
+                Nhập bù cơ số 
+              </h3>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button type="button" className="btn btn-secondary btn-sm" style={{ padding: '4px 12px' }} onClick={() => setShowNhapBuModal(false)}>Huỷ</button>
+                <button type="button" className="btn btn-primary btn-sm" style={{ padding: '4px 12px' }} onClick={handleConfirmNhapBu}>Lưu</button>
+              </div>
+            </div>
+            
+            <div className="modal-body" style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+              <div className="table-wrapper">
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#059669', color: 'white' }}>
+                      <th style={{ textAlign: 'center', padding: '12px 8px', textTransform: 'uppercase', fontSize: '0.85rem', color: 'white' }}>Tên vật tư</th>
+                      <th style={{ width: '100px', textAlign: 'center', padding: '12px 8px', textTransform: 'uppercase', fontSize: '0.85rem', color: 'white' }}>Nhập bù</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {nhapBuItems.map((item) => (
+                      <tr key={item.id} style={{ borderBottom: '1px solid #d1d5db' }}>
+                        <td style={{ padding: '12px', fontWeight: '500' }}>
+                          {item.ten_vtyt}
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Đã SD: {item.so_luong}</div>
+                        </td>
+                        <td style={{ padding: '0', textAlign: 'center' }}>
+                          <input 
+                            type="number" 
+                            value={item.so_luong_nhap_bu} 
+                            onChange={(e) => handleNhapBuChange(item.id, e.target.value)}
+                            style={{ width: '100%', height: '100%', minHeight: '44px', padding: '12px 8px', border: 'none', textAlign: 'center', color: '#0d9488', fontWeight: 'bold', fontSize: '1.1rem', outline: 'none', backgroundColor: 'transparent' }}
+                            min="0"
+                            step="any"
+                            required
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       )}
