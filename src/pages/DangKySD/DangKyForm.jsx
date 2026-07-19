@@ -31,6 +31,7 @@ export default function DangKyForm() {
   
   // Permission state
   const [nguoiDangKyId, setNguoiDangKyId] = useState('');
+  const [creatorName, setCreatorName] = useState('');
   const isManager = profile?.vai_tro === 'admin' || profile?.vai_tro === 'quan_ly_kho';
   const canEdit = !editMaPhieu || isManager || (user && nguoiDangKyId === user.id);
 
@@ -73,6 +74,18 @@ export default function DangKyForm() {
             setNgayDangKy(editData[0].ngay_dang_ky);
             setTenBenhNhan(editData[0].ghi_chu || '');
             setNguoiDangKyId(editData[0].nguoi_dang_ky);
+            
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('ho_ten, username')
+              .eq('id', editData[0].nguoi_dang_ky)
+              .single();
+              
+            if (profileData) {
+              setCreatorName(profileData.ho_ten || profileData.username || 'User');
+            } else {
+              setCreatorName('User');
+            }
             
             const loadedItems = editData.map(row => {
               const dm = (data || []).find(d => d.id === row.vat_tu_id);
@@ -227,7 +240,7 @@ export default function DangKyForm() {
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label>Người đăng ký</label>
-              <input type="text" className="form-control" value={profile?.ho_ten || profile?.username || 'User'} readOnly style={{ backgroundColor: '#e2e8f0' }} />
+              <input type="text" className="form-control" value={editMaPhieu ? (creatorName || 'Đang tải...') : (profile?.ho_ten || profile?.username || 'User')} readOnly style={{ backgroundColor: '#e2e8f0' }} />
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label>Tên bệnh nhân / Mục đích *</label>
