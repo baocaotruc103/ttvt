@@ -639,7 +639,7 @@ tr:hover td {
   .fab-save {
     display: flex !important;
     position: fixed;
-    bottom: 24px;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
     right: 24px;
     z-index: 1000;
     width: 56px;
