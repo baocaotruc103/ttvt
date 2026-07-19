@@ -28,6 +28,11 @@ export default function DangKyForm() {
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [checkedIds, setCheckedIds] = useState(new Set());
+  
+  // Permission state
+  const [nguoiDangKyId, setNguoiDangKyId] = useState('');
+  const isManager = profile?.vai_tro === 'admin' || profile?.vai_tro === 'quan_ly_kho';
+  const canEdit = !editMaPhieu || isManager || (user && nguoiDangKyId === user.id);
 
   useEffect(() => {
     // Generate temporary maPhieu if creating new
@@ -67,6 +72,7 @@ export default function DangKyForm() {
             setMaPhieu(editData[0].ma_phieu);
             setNgayDangKy(editData[0].ngay_dang_ky);
             setTenBenhNhan(editData[0].ghi_chu || '');
+            setNguoiDangKyId(editData[0].nguoi_dang_ky);
             
             const loadedItems = editData.map(row => {
               const dm = (data || []).find(d => d.id === row.vat_tu_id);
@@ -217,7 +223,7 @@ export default function DangKyForm() {
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label>Ngày đăng ký</label>
-              <input type="date" className="form-control" value={ngayDangKy} onChange={(e) => setNgayDangKy(e.target.value)} required />
+              <input type="date" className="form-control" value={ngayDangKy} onChange={(e) => setNgayDangKy(e.target.value)} required readOnly={!canEdit} style={{ backgroundColor: !canEdit ? '#e2e8f0' : 'white' }} />
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label>Người đăng ký</label>
@@ -225,16 +231,18 @@ export default function DangKyForm() {
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label>Tên bệnh nhân / Mục đích *</label>
-              <input type="text" className="form-control" value={tenBenhNhan} onChange={(e) => setTenBenhNhan(e.target.value)} placeholder="Nhập tên bệnh nhân..." required />
+              <input type="text" className="form-control" value={tenBenhNhan} onChange={(e) => setTenBenhNhan(e.target.value)} placeholder="Nhập tên bệnh nhân..." required readOnly={!canEdit} style={{ backgroundColor: !canEdit ? '#e2e8f0' : 'white' }} />
             </div>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Danh sách Vật tư</h3>
-            <button type="button" className="btn btn-outline" onClick={handleOpenModal} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Plus size={16} />
-              <span>Chọn vật tư</span>
-            </button>
+            {canEdit && (
+              <button type="button" className="btn btn-outline" onClick={handleOpenModal} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Plus size={16} />
+                <span>Chọn vật tư</span>
+              </button>
+            )}
           </div>
 
           {selectedItems.length === 0 ? (
@@ -249,7 +257,7 @@ export default function DangKyForm() {
                     <th style={{ width: '50px', textAlign: 'center', padding: '12px 8px', borderRight: '1px solid rgba(255,255,255,0.3)', textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: 'bold' }}>TT</th>
                     <th style={{ textAlign: 'center', padding: '12px 8px', borderRight: '1px solid rgba(255,255,255,0.3)', textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: 'bold' }}>Tên vật tư</th>
                     <th style={{ width: '100px', textAlign: 'center', padding: '12px 8px', borderRight: '1px solid rgba(255,255,255,0.3)', textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: 'bold' }}>Số lượng</th>
-                    <th style={{ width: '50px', textAlign: 'center', padding: '12px 8px', textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: 'bold' }}></th>
+                    {canEdit && <th style={{ width: '50px', textAlign: 'center', padding: '12px 8px', textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: 'bold' }}></th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -270,13 +278,16 @@ export default function DangKyForm() {
                           min="0.01"
                           step="any"
                           required
+                          readOnly={!canEdit}
                         />
                       </td>
-                      <td style={{ padding: '8px', textAlign: 'center', verticalAlign: 'middle' }}>
-                        <button type="button" onClick={() => handleRemoveItem(item.vat_tu_id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
+                      {canEdit && (
+                        <td style={{ padding: '8px', textAlign: 'center', verticalAlign: 'middle' }}>
+                          <button type="button" onClick={() => handleRemoveItem(item.vat_tu_id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                            <Trash2 size={18} />
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -291,22 +302,26 @@ export default function DangKyForm() {
               onClick={() => navigate('/dang-ky-su-dung')}
               disabled={loading}
             >
-              Huỷ
+              {canEdit ? 'Huỷ' : 'Quay lại'}
             </button>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              <Save size={18} />
-              <span>{loading ? 'Đang lưu...' : 'Lưu phiếu đăng ký'}</span>
-            </button>
+            {canEdit && (
+              <button type="submit" className="btn btn-primary" disabled={loading}>
+                <Save size={18} />
+                <span>{loading ? 'Đang lưu...' : 'Lưu phiếu đăng ký'}</span>
+              </button>
+            )}
           </div>
           
-          <button 
-            type="submit" 
-            className="fab-save" 
-            disabled={loading}
-            title="Lưu"
-          >
-            <Save size={24} />
-          </button>
+          {canEdit && (
+            <button 
+              type="submit" 
+              className="fab-save" 
+              disabled={loading}
+              title="Lưu"
+            >
+              <Save size={24} />
+            </button>
+          )}
         </form>
       </div>
 

@@ -213,7 +213,13 @@ export default function DangKyList() {
               </thead>
               <tbody>
                 {filteredRegs.map((reg) => (
-                  <tr key={reg.ma_phieu}>
+                  <tr 
+                    key={reg.ma_phieu}
+                    onClick={() => navigate(`/dang-ky-su-dung/moi?editMaPhieu=${reg.ma_phieu}`)}
+                    style={{ cursor: 'pointer', transition: 'background-color 0.2s' }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
                     <td data-label="Mã phiếu" style={{ fontWeight: '600', color: 'var(--primary)' }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                         <FileText size={14} />
@@ -237,7 +243,7 @@ export default function DangKyList() {
                             <button 
                               className="btn btn-primary btn-sm"
                               style={{ padding: '4px 8px', gap: '4px' }}
-                              onClick={() => handleMarkAsLinh(reg.ma_phieu)}
+                              onClick={(e) => { e.stopPropagation(); handleMarkAsLinh(reg.ma_phieu); }}
                               title="Đánh dấu đã lĩnh bù toàn bộ phiếu"
                             >
                               <Check size={14} />
@@ -246,7 +252,7 @@ export default function DangKyList() {
                             
                             <button 
                               className="btn btn-secondary btn-sm btn-icon-only"
-                              onClick={() => navigate(`/dang-ky-su-dung/moi?editMaPhieu=${reg.ma_phieu}`)}
+                              onClick={(e) => { e.stopPropagation(); navigate(`/dang-ky-su-dung/moi?editMaPhieu=${reg.ma_phieu}`); }}
                               title="Sửa phiếu"
                             >
                               <Edit size={14} />
@@ -254,7 +260,7 @@ export default function DangKyList() {
                             <button 
                               className="btn btn-outline btn-sm btn-icon-only"
                               style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
-                              onClick={() => handleDeleteReg(reg.ma_phieu)}
+                              onClick={(e) => { e.stopPropagation(); handleDeleteReg(reg.ma_phieu); }}
                               title="Xóa toàn bộ phiếu"
                             >
                               <Trash2 size={14} />
