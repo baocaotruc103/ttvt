@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import { Plus, Check, Search, Calendar, User, Edit, Trash2 } from 'lucide-react';
+import { Plus, Check, Search, Calendar, User, Edit, Trash2, List, FileText } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
 
 export default function DangKyList() {
@@ -13,7 +13,7 @@ export default function DangKyList() {
   const initialFilter = searchParams.get('filter') === 'chua_linh' ? 'Chưa lĩnh' : 'Tất cả';
   
   const [loading, setLoading] = useState(true);
-  const [registrations, setRegistrations] = useState([]);
+  const [groupedRegistrations, setGroupedRegistrations] = useState([]);
   const [filterStatus, setFilterStatus] = useState(initialFilter);
   const [searchTerm, setSearchTerm] = useState('');
   const [profilesMap, setProfilesMap] = useState({});
@@ -21,28 +21,60 @@ export default function DangKyList() {
   const fetchRegistrations = async () => {
     setLoading(true);
     try {
-      let query = supabase
+      // Query joining with danh_muc to get ten_vtyt
+      const { data, error } = await supabase
         .from('dang_ky_sd')
-        .select('*')
+        .select(`
+          *,
+          danh_muc ( id, ten_vtyt, dvt )
+        `)
         .order('ngay_dang_ky', { ascending: false });
 
+      if (error) throw error;
+
+      // Grouping logic
+      const grouped = {};
+      (data || []).forEach(reg => {
+        const maPhieu = reg.ma_phieu || reg.id;
+        if (!grouped[maPhieu]) {
+          grouped[maPhieu] = {
+            ma_phieu: maPhieu,
+            ngay_dang_ky: reg.ngay_dang_ky,
+            ngay_linh: reg.ngay_linh,
+            ghi_chu: reg.ghi_chu,
+            nguoi_dang_ky: reg.nguoi_dang_ky,
+            da_linh: reg.da_linh,
+            items: []
+          };
+        }
+        grouped[maPhieu].items.push({
+          id: reg.id,
+          ten_vtyt: reg.danh_muc?.ten_vtyt,
+          so_luong: reg.so_luong,
+          dvt: reg.danh_muc?.dvt
+        });
+      });
+
+      let groupedArray = Object.values(grouped);
+
+      // Apply Filter by Status
       if (filterStatus === 'Chưa lĩnh') {
-        query = query.eq('da_linh', false);
+        groupedArray = groupedArray.filter(g => !g.da_linh);
       } else if (filterStatus === 'Đã lĩnh') {
-        query = query.eq('da_linh', true);
+        groupedArray = groupedArray.filter(g => g.da_linh);
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
-      
-      setRegistrations(data || []);
+      // Sort by date descending
+      groupedArray.sort((a, b) => new Date(b.ngay_dang_ky) - new Date(a.ngay_dang_ky));
+
+      setGroupedRegistrations(groupedArray);
 
       // Fetch profiles to map user IDs to names
-      const { data: profData } = await supabase.from('profiles').select('id, ho_ten');
+      const { data: profData } = await supabase.from('profiles').select('id, ho_ten, username');
       const pMap = {};
       if (profData) {
         profData.forEach(p => {
-          pMap[p.id] = p.ho_ten;
+          pMap[p.id] = p.ho_ten || p.username;
         });
       }
       setProfilesMap(pMap);
@@ -68,13 +100,13 @@ export default function DangKyList() {
     }
   };
 
-  const handleMarkAsLinh = async (id) => {
+  const handleMarkAsLinh = async (maPhieu) => {
     try {
       const todayStr = new Date().toISOString().split('T')[0];
       const { error } = await supabase
         .from('dang_ky_sd')
         .update({ da_linh: true, ngay_linh: todayStr })
-        .eq('id', id);
+        .eq('ma_phieu', maPhieu);
 
       if (error) throw error;
       fetchRegistrations();
@@ -84,13 +116,13 @@ export default function DangKyList() {
     }
   };
 
-  const handleDeleteReg = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa đăng ký này?')) return;
+  const handleDeleteReg = async (maPhieu) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa phiếu đăng ký này? Tất cả vật tư trong phiếu sẽ bị xóa.')) return;
     try {
       const { error } = await supabase
         .from('dang_ky_sd')
         .delete()
-        .eq('id', id);
+        .eq('ma_phieu', maPhieu);
       if (error) throw error;
       fetchRegistrations();
     } catch (err) {
@@ -98,11 +130,13 @@ export default function DangKyList() {
     }
   };
 
-  // Filter registrations by item name
-  const filteredRegs = registrations.filter(reg => {
-    const supplyName = reg.danh_muc?.ten_vtyt || '';
-    return supplyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           (reg.ghi_chu && reg.ghi_chu.toLowerCase().includes(searchTerm.toLowerCase()));
+  // Filter registrations by search term
+  const filteredRegs = groupedRegistrations.filter(reg => {
+    const searchStr = searchTerm.toLowerCase();
+    const matchGhiChu = reg.ghi_chu && reg.ghi_chu.toLowerCase().includes(searchStr);
+    const matchMaPhieu = reg.ma_phieu.toLowerCase().includes(searchStr);
+    const matchItems = reg.items.some(item => item.ten_vtyt && item.ten_vtyt.toLowerCase().includes(searchStr));
+    return matchGhiChu || matchMaPhieu || matchItems;
   });
 
   return (
@@ -111,12 +145,12 @@ export default function DangKyList() {
         <div>
           <h2>Đăng ký Sử dụng Vật tư</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '4px' }}>
-            Quản lý và lĩnh bù các vật tư y tế đã sử dụng tại tủ trực
+            Quản lý và lĩnh bù các phiếu vật tư y tế đã sử dụng tại tủ trực
           </p>
         </div>
         <button className="btn btn-primary" onClick={() => navigate('/dang-ky-su-dung/moi')}>
           <Plus size={18} />
-          <span>Đăng ký sử dụng</span>
+          <span>Tạo phiếu mới</span>
         </button>
       </div>
 
@@ -126,7 +160,7 @@ export default function DangKyList() {
           <Search size={18} style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)' }} />
           <input
             type="text"
-            placeholder="Tìm theo tên vật tư hoặc ghi chú..."
+            placeholder="Tìm theo mã phiếu, bệnh nhân, vật tư..."
             className="form-control"
             style={{ paddingLeft: '38px', margin: 0 }}
             value={searchTerm}
@@ -159,11 +193,11 @@ export default function DangKyList() {
       {loading ? (
         <div className="loading-screen" style={{ minHeight: '200px' }}>
           <div className="spinner"></div>
-          <p>Đang tải danh sách đăng ký...</p>
+          <p>Đang tải danh sách phiếu...</p>
         </div>
       ) : filteredRegs.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>
-          Không có đăng ký sử dụng nào phù hợp.
+          Không có phiếu đăng ký nào phù hợp.
         </div>
       ) : (
         <div className="card" style={{ padding: '8px' }}>
@@ -171,30 +205,42 @@ export default function DangKyList() {
             <table className="responsive-table">
               <thead>
                 <tr>
+                  <th>Mã phiếu</th>
                   <th>Ngày đăng ký</th>
-                  <th>Tên vật tư</th>
-                  <th>Số lượng</th>
+                  <th>Bệnh nhân / Mục đích</th>
+                  <th>Danh sách Vật tư</th>
                   <th>Người đăng ký</th>
                   <th>Trạng thái</th>
-                  <th>Ngày lĩnh</th>
-                  <th>Ghi chú</th>
                   <th>Hành động</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredRegs.map((reg) => (
-                  <tr key={reg.id}>
+                  <tr key={reg.ma_phieu}>
+                    <td data-label="Mã phiếu" style={{ fontWeight: '600', color: 'var(--primary)' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <FileText size={14} />
+                        {reg.ma_phieu}
+                      </span>
+                    </td>
                     <td data-label="Ngày đăng ký" style={{ whiteSpace: 'nowrap' }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                         <Calendar size={14} className="text-muted" />
                         {reg.ngay_dang_ky ? reg.ngay_dang_ky.split('-').reverse().join('/') : ''}
                       </span>
                     </td>
-                    <td data-label="Tên vật tư" style={{ fontWeight: '500' }}>
-                      {reg.danh_muc?.ten_vtyt}
+                    <td data-label="Bệnh nhân / Mục đích" style={{ fontWeight: '500' }}>
+                      {reg.ghi_chu || '-'}
                     </td>
-                    <td data-label="Số lượng" style={{ fontWeight: '600' }}>
-                      {reg.so_luong} {reg.danh_muc?.dvt}
+                    <td data-label="Danh sách Vật tư">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.9rem' }}>
+                        {reg.items.map((item, idx) => (
+                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span>- {item.ten_vtyt}</span>
+                            <span style={{ fontWeight: '600' }}>{item.so_luong} {item.dvt}</span>
+                          </div>
+                        ))}
+                      </div>
                     </td>
                     <td data-label="Người đăng ký">
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}>
@@ -206,12 +252,11 @@ export default function DangKyList() {
                       <span className={`badge ${reg.da_linh ? 'success' : 'warning'}`}>
                         {reg.da_linh ? 'Đã lĩnh bù' : 'Chưa lĩnh bù'}
                       </span>
-                    </td>
-                    <td data-label="Ngày lĩnh">
-                      {reg.ngay_linh ? reg.ngay_linh.split('-').reverse().join('/') : '-'}
-                    </td>
-                    <td data-label="Ghi chú" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                      {reg.ghi_chu || '-'}
+                      {reg.da_linh && reg.ngay_linh && (
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                          Ngày lĩnh: {reg.ngay_linh.split('-').reverse().join('/')}
+                        </div>
+                      )}
                     </td>
                     <td data-label="Hành động">
                       {!reg.da_linh ? (
@@ -219,8 +264,8 @@ export default function DangKyList() {
                           <button 
                             className="btn btn-primary btn-sm"
                             style={{ padding: '4px 8px', gap: '4px' }}
-                            onClick={() => handleMarkAsLinh(reg.id)}
-                            title="Đánh dấu đã lĩnh bù"
+                            onClick={() => handleMarkAsLinh(reg.ma_phieu)}
+                            title="Đánh dấu đã lĩnh bù toàn bộ phiếu"
                           >
                             <Check size={14} />
                             <span className="hide-mobile">Lĩnh bù</span>
@@ -230,16 +275,16 @@ export default function DangKyList() {
                             <>
                               <button 
                                 className="btn btn-secondary btn-sm btn-icon-only"
-                                onClick={() => navigate(`/dang-ky-su-dung/moi?editId=${reg.id}`)}
-                                title="Sửa"
+                                onClick={() => navigate(`/dang-ky-su-dung/moi?editMaPhieu=${reg.ma_phieu}`)}
+                                title="Sửa phiếu"
                               >
                                 <Edit size={14} />
                               </button>
                               <button 
                                 className="btn btn-outline btn-sm btn-icon-only"
                                 style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
-                                onClick={() => handleDeleteReg(reg.id)}
-                                title="Xóa"
+                                onClick={() => handleDeleteReg(reg.ma_phieu)}
+                                title="Xóa toàn bộ phiếu"
                               >
                                 <Trash2 size={14} />
                               </button>

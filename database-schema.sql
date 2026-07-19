@@ -55,6 +55,7 @@ create trigger on_auth_user_created
 -- -------------------------------------------------------------
 create table if not exists dang_ky_sd (
   id uuid primary key default gen_random_uuid(),
+  ma_phieu text, -- Mã nhóm chung cho nhiều dòng vật tư
   ngay_dang_ky date not null default current_date,
   vat_tu_id uuid not null references danh_muc(id),
   so_luong numeric not null check (so_luong > 0),
