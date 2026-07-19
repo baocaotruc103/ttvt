@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import { ArrowLeft, Trash2, Edit, X, Download } from 'lucide-react';
+import { ArrowLeft, Trash2, Edit, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 export default function KiemKeChiTiet() {
   const { date } = useParams();
@@ -67,29 +68,25 @@ export default function KiemKeChiTiet() {
     navigate(`/kiem-ke/moi?editDate=${date}`);
   };
 
-  const handleExportCSV = () => {
+  const handleExportExcel = () => {
     const headers = ['Loại', 'Tên vật tư', 'Đơn vị tính', 'Cơ số', 'SL thực tế', 'Chờ lĩnh bù', 'Tổng số', 'Chênh lệch', 'Ghi chú'];
     const rows = audits.map(a => [
       a.loai_kiem_ke || 'Thủ công',
-      `"${(a.ten_vtyt || '').replace(/"/g, '""')}"`,
-      `"${a.dvt || ''}"`,
+      a.ten_vtyt || '',
+      a.dvt || '',
       a.co_so,
       a.sl_kiem_ke_thuc_te,
       a.sl_da_su_dung_chua_linh,
       a.tong_so_luong,
       a.thua_thieu,
-      `"${(a.ghi_chu || '').replace(/"/g, '""')}"`
+      a.ghi_chu || ''
     ]);
     
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `KiemKe_${date.split('-').join('')}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "KiemKe");
+    
+    XLSX.writeFile(workbook, `KiemKe_${date.split('-').join('')}.xlsx`);
   };
 
   if (loading) {
@@ -127,7 +124,7 @@ export default function KiemKeChiTiet() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn btn-secondary" style={{ backgroundColor: '#10b981', color: 'white', borderColor: '#10b981' }} onClick={handleExportCSV} title="Xuất Excel">
+          <button className="btn btn-secondary" style={{ backgroundColor: '#10b981', color: 'white', borderColor: '#10b981' }} onClick={handleExportExcel} title="Xuất Excel">
             <Download size={16} />
             <span className="hide-mobile">Xuất Excel</span>
           </button>
