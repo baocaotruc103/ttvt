@@ -1,0 +1,23 @@
+{
+  "name": "Hệ thống Quản lý Kho VTYT",
+  "short_name": "Kho VTYT",
+  "description": "Quản lý định mức cơ số vật tư y tế và tủ trực.",
+  "theme_color": "#0f766e",
+  "background_color": "#f1f5f9",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
