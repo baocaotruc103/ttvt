@@ -254,10 +254,10 @@ export default function DangKyForm() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#059669', color: 'white' }}>
-                    <th style={{ width: '50px', textAlign: 'center', padding: '12px 8px', borderRight: '1px solid rgba(255,255,255,0.3)', textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: 'bold' }}>TT</th>
-                    <th style={{ textAlign: 'center', padding: '12px 8px', borderRight: '1px solid rgba(255,255,255,0.3)', textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: 'bold' }}>Tên vật tư</th>
-                    <th style={{ width: '100px', textAlign: 'center', padding: '12px 8px', borderRight: '1px solid rgba(255,255,255,0.3)', textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: 'bold' }}>Số lượng</th>
-                    {canEdit && <th style={{ width: '50px', textAlign: 'center', padding: '12px 8px', textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: 'bold' }}></th>}
+                    <th style={{ width: '40px', textAlign: 'center', padding: '12px 4px', borderRight: '1px solid rgba(255,255,255,0.3)', textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: 'bold', color: 'white' }}>TT</th>
+                    <th style={{ textAlign: 'center', padding: '12px 8px', borderRight: '1px solid rgba(255,255,255,0.3)', textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: 'bold', color: 'white' }}>Tên vật tư</th>
+                    <th style={{ width: '70px', textAlign: 'center', padding: '12px 4px', borderRight: '1px solid rgba(255,255,255,0.3)', textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: 'bold', color: 'white' }}>Số lượng</th>
+                    {canEdit && <th style={{ width: '40px', textAlign: 'center', padding: '12px 4px', textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: 'bold', color: 'white' }}></th>}
                   </tr>
                 </thead>
                 <tbody>
