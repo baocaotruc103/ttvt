@@ -201,8 +201,8 @@ export default function DangKyList() {
         </div>
       ) : (
         <div className="card" style={{ padding: '8px' }}>
-          <div className="table-wrapper">
-            <table className="responsive-table">
+          <div className="table-wrapper" style={{ overflowX: 'auto' }}>
+            <table style={{ minWidth: '800px', width: '100%' }}>
               <thead>
                 <tr>
                   <th>Mã phiếu</th>
