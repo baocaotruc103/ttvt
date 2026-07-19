@@ -31,11 +31,16 @@ export default function DangKyForm() {
 
   useEffect(() => {
     // Generate temporary maPhieu if creating new
-    if (!editMaPhieu) {
+    if (!editMaPhieu && profile) {
       const generateMaPhieu = () => {
-        const dateStr = new Date().toISOString().replace(/[-:T]/g, '').slice(2, 14);
-        const randomStr = Math.floor(1000 + Math.random() * 9000);
-        return `DK-${dateStr}-${randomStr}`;
+        const now = new Date();
+        const d = String(now.getDate()).padStart(2, '0');
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const y = now.getFullYear();
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        const username = profile.username || 'user';
+        return `${d}${m}${y}-${hh}${mm}-${username}`;
       };
       setMaPhieu(generateMaPhieu());
     }
@@ -82,7 +87,7 @@ export default function DangKyForm() {
     };
 
     fetchData();
-  }, [editMaPhieu]);
+  }, [editMaPhieu, profile]);
 
   const handleOpenModal = () => {
     setCheckedIds(new Set(selectedItems.map(item => item.vat_tu_id)));
