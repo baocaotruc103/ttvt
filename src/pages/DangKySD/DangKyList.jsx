@@ -394,8 +394,6 @@ export default function DangKyList() {
             </div>
           </div>
         )}
-      </div>
-
       {showNhapBuModal && (
         <div className="modal-overlay" style={{ zIndex: 9999 }}>
           <div className="modal-content" style={{ maxWidth: '600px', width: '100%', display: 'flex', flexDirection: 'column', maxHeight: '80vh' }}>
