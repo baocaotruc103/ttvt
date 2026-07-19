@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import { Plus, Check, Search, Calendar, User, Edit, Trash2, List, FileText } from 'lucide-react';
+import { Plus, Check, Search, Calendar, User, Edit, Trash2, List, FileText, Download } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
+import * as XLSX from 'xlsx';
 
 export default function DangKyList() {
   const { profile } = useAuth();
@@ -140,19 +141,87 @@ export default function DangKyList() {
     return matchGhiChu || matchMaPhieu || matchItems;
   });
 
+  const handleExportExcel = () => {
+    const headers = ['Mã Phiếu', 'Ngày đăng ký', 'Bệnh nhân/Ghi chú', 'Trạng thái', 'Tên vật tư', 'ĐVT', 'Số lượng', 'Người đăng ký'];
+    
+    const rows = [];
+    filteredRegs.forEach(reg => {
+      const nguoiKiem = profilesMap[reg.nguoi_dang_ky] || reg.nguoi_dang_ky || 'Không rõ';
+      const trangThai = reg.da_linh ? 'Đã lĩnh' : 'Chưa lĩnh';
+      
+      if (reg.items && reg.items.length > 0) {
+        reg.items.forEach(item => {
+          rows.push([
+            reg.ma_phieu,
+            reg.ngay_dang_ky,
+            reg.ghi_chu || '',
+            trangThai,
+            item.ten_vtyt || '',
+            item.dvt || '',
+            item.so_luong,
+            nguoiKiem
+          ]);
+        });
+      } else {
+        rows.push([
+          reg.ma_phieu,
+          reg.ngay_dang_ky,
+          reg.ghi_chu || '',
+          trangThai,
+          '',
+          '',
+          '',
+          nguoiKiem
+        ]);
+      }
+    });
+
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "DangKySD");
+    XLSX.writeFile(workbook, `DangKySD_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
+  const handleDownloadTemplate = () => {
+    const headers = ['Ngày đăng ký (YYYY-MM-DD)', 'Bệnh nhân/Ghi chú', 'Tên vật tư (Chính xác theo danh mục)', 'Số lượng'];
+    const rows = [
+      ['2026-07-19', 'Nguyễn Văn A', 'Băng dính lụa (2.5cm x 500cm)', 2],
+      ['2026-07-19', 'Nguyễn Văn A', 'Bơm tiêm 5ml', 5]
+    ];
+    
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "MauNhap");
+    XLSX.writeFile(workbook, `MauNhapDangKySD.xlsx`);
+  };
+
   return (
     <div>
-      <div className="title-container">
+      <div className="title-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h2>Đăng ký Sử dụng Vật tư</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '4px' }}>
             Quản lý và lĩnh bù các phiếu vật tư y tế đã sử dụng tại tủ trực
           </p>
         </div>
-        <button className="btn btn-primary" onClick={() => navigate('/dang-ky-su-dung/moi')}>
-          <Plus size={18} />
-          <span>Tạo phiếu mới</span>
-        </button>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {profile?.vai_tro === 'admin' && (
+            <>
+              <button className="btn btn-secondary" style={{ backgroundColor: '#f3f4f6', color: '#4b5563', borderColor: '#d1d5db' }} onClick={handleDownloadTemplate} title="Tải file mẫu">
+                <FileText size={18} />
+                <span className="hide-mobile">Tải file mẫu</span>
+              </button>
+              <button className="btn btn-secondary" style={{ backgroundColor: '#10b981', color: 'white', borderColor: '#10b981' }} onClick={handleExportExcel} title="Xuất Excel">
+                <Download size={18} />
+                <span className="hide-mobile">Xuất Excel</span>
+              </button>
+            </>
+          )}
+          <button className="btn btn-primary" onClick={() => navigate('/dang-ky-su-dung/moi')}>
+            <Plus size={18} />
+            <span>Tạo phiếu mới</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter and Search Panel */}
