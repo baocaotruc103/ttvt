@@ -9,8 +9,9 @@ export default function DangKyList() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   
-  // Set initial filter from query parameter if available
   const initialFilter = searchParams.get('filter') === 'chua_linh' ? 'Chưa lĩnh' : 'Tất cả';
+  
+  const isManager = profile?.vai_tro === 'admin' || profile?.vai_tro === 'quan_ly_kho';
   
   const [loading, setLoading] = useState(true);
   const [groupedRegistrations, setGroupedRegistrations] = useState([]);
@@ -202,16 +203,12 @@ export default function DangKyList() {
       ) : (
         <div className="card" style={{ padding: '8px' }}>
           <div className="table-wrapper" style={{ overflowX: 'auto' }}>
-            <table style={{ minWidth: '800px', width: '100%' }}>
+            <table style={{ minWidth: '100%', width: '100%' }}>
               <thead>
                 <tr>
                   <th>Mã phiếu</th>
-                  <th>Ngày đăng ký</th>
-                  <th>Bệnh nhân / Mục đích</th>
-                  <th>Danh sách Vật tư</th>
-                  <th>Người đăng ký</th>
                   <th>Trạng thái</th>
-                  <th>Hành động</th>
+                  {isManager && <th>Hành động</th>}
                 </tr>
               </thead>
               <tbody>
@@ -221,31 +218,6 @@ export default function DangKyList() {
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                         <FileText size={14} />
                         {reg.ma_phieu}
-                      </span>
-                    </td>
-                    <td data-label="Ngày đăng ký" style={{ whiteSpace: 'nowrap' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                        <Calendar size={14} className="text-muted" />
-                        {reg.ngay_dang_ky ? reg.ngay_dang_ky.split('-').reverse().join('/') : ''}
-                      </span>
-                    </td>
-                    <td data-label="Bệnh nhân / Mục đích" style={{ fontWeight: '500' }}>
-                      {reg.ghi_chu || '-'}
-                    </td>
-                    <td data-label="Danh sách Vật tư">
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.9rem', width: '100%' }}>
-                        {reg.items.map((item, idx) => (
-                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: idx < reg.items.length - 1 ? '1px dashed #e2e8f0' : 'none', paddingBottom: idx < reg.items.length - 1 ? '6px' : '0' }}>
-                            <span style={{ flex: 1, paddingRight: '12px' }}>&bull; {item.ten_vtyt}</span>
-                            <span style={{ fontWeight: 'bold', color: '#0f766e', whiteSpace: 'nowrap' }}>{item.so_luong} {item.dvt}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </td>
-                    <td data-label="Người đăng ký">
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}>
-                        <User size={14} className="text-muted" />
-                        {profilesMap[reg.nguoi_dang_ky] || 'Không rõ'}
                       </span>
                     </td>
                     <td data-label="Trạng thái">
@@ -258,43 +230,41 @@ export default function DangKyList() {
                         </div>
                       )}
                     </td>
-                    <td data-label="Hành động">
-                      {!reg.da_linh ? (
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                          <button 
-                            className="btn btn-primary btn-sm"
-                            style={{ padding: '4px 8px', gap: '4px' }}
-                            onClick={() => handleMarkAsLinh(reg.ma_phieu)}
-                            title="Đánh dấu đã lĩnh bù toàn bộ phiếu"
-                          >
-                            <Check size={14} />
-                            <span className="hide-mobile">Lĩnh bù</span>
-                          </button>
-                          
-                          {profile?.id === reg.nguoi_dang_ky && (
-                            <>
-                              <button 
-                                className="btn btn-secondary btn-sm btn-icon-only"
-                                onClick={() => navigate(`/dang-ky-su-dung/moi?editMaPhieu=${reg.ma_phieu}`)}
-                                title="Sửa phiếu"
-                              >
-                                <Edit size={14} />
-                              </button>
-                              <button 
-                                className="btn btn-outline btn-sm btn-icon-only"
-                                style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
-                                onClick={() => handleDeleteReg(reg.ma_phieu)}
-                                title="Xóa toàn bộ phiếu"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      ) : (
-                        <span style={{ fontSize: '0.8rem', color: 'var(--success)', fontWeight: '500' }}>Hoàn thành</span>
-                      )}
-                    </td>
+                    {isManager && (
+                      <td data-label="Hành động">
+                        {!reg.da_linh ? (
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <button 
+                              className="btn btn-primary btn-sm"
+                              style={{ padding: '4px 8px', gap: '4px' }}
+                              onClick={() => handleMarkAsLinh(reg.ma_phieu)}
+                              title="Đánh dấu đã lĩnh bù toàn bộ phiếu"
+                            >
+                              <Check size={14} />
+                              <span className="hide-mobile">Lĩnh bù</span>
+                            </button>
+                            
+                            <button 
+                              className="btn btn-secondary btn-sm btn-icon-only"
+                              onClick={() => navigate(`/dang-ky-su-dung/moi?editMaPhieu=${reg.ma_phieu}`)}
+                              title="Sửa phiếu"
+                            >
+                              <Edit size={14} />
+                            </button>
+                            <button 
+                              className="btn btn-outline btn-sm btn-icon-only"
+                              style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                              onClick={() => handleDeleteReg(reg.ma_phieu)}
+                              title="Xóa toàn bộ phiếu"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '0.8rem', color: 'var(--success)', fontWeight: '500' }}>Hoàn thành</span>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
