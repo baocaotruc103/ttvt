@@ -27,7 +27,7 @@ export default function DangKyForm() {
         const { data, error } = await supabase
           .from('danh_muc')
           .select('id, ten_vtyt, dvt')
-          .eq('trang_thai', 'Đang dùng')
+          .eq('trang_thai', 'Còn hàng')
           .order('tt', { ascending: true });
         
         if (error) throw error;
@@ -142,7 +142,11 @@ export default function DangKyForm() {
                   setSelectedUnit('');
                 }
               }}
-              onFocus={() => setShowDropdown(true)}
+              onFocus={(e) => {
+                setShowDropdown(true);
+                e.target.select();
+              }}
+              onClick={(e) => e.target.select()}
               onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
               required={!vatTuId}
             />

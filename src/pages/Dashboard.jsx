@@ -52,7 +52,7 @@ export default function Dashboard() {
       const { data: dmData, count: dmCount } = await supabase
         .from('danh_muc')
         .select('*', { count: 'exact' })
-        .eq('trang_thai', 'Đang dùng');
+        .eq('trang_thai', 'Còn hàng');
 
       setTotalVtytCount(dmCount || 0);
 
