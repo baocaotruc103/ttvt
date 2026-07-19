@@ -157,7 +157,8 @@ export default function DangKyForm() {
                   <li 
                     key={item.id} 
                     style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
-                    onClick={() => {
+                    onMouseDown={(e) => {
+                      e.preventDefault(); // Tránh bị mất focus ở thẻ input
                       setVatTuId(item.id);
                       setSearchTerm(item.ten_vtyt);
                       setSelectedUnit(item.dvt);
