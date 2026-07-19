@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import { ArrowLeft, Trash2, Edit, Download } from 'lucide-react';
+import { ArrowLeft, Trash2, Edit, Download, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 export default function KiemKeChiTiet() {
