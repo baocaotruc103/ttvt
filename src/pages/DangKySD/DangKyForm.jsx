@@ -237,38 +237,39 @@ export default function DangKyForm() {
               Chưa có vật tư nào được chọn. Hãy bấm "Chọn vật tư" để thêm vào danh sách.
             </div>
           ) : (
-            <div className="table-wrapper" style={{ marginBottom: '24px' }}>
-              <table className="responsive-table">
+            <div className="table-wrapper" style={{ marginBottom: '24px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #d1d5db' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr>
-                    <th style={{ width: '50px', textAlign: 'center' }}>TT</th>
-                    <th>Tên vật tư</th>
-                    <th style={{ width: '100px' }}>ĐVT</th>
-                    <th style={{ width: '150px' }}>Số lượng</th>
-                    <th style={{ width: '60px', textAlign: 'center' }}>Xóa</th>
+                  <tr style={{ backgroundColor: '#059669', color: 'white' }}>
+                    <th style={{ width: '50px', textAlign: 'center', padding: '12px 8px', borderRight: '1px solid rgba(255,255,255,0.3)', textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: 'bold' }}>TT</th>
+                    <th style={{ textAlign: 'center', padding: '12px 8px', borderRight: '1px solid rgba(255,255,255,0.3)', textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: 'bold' }}>Tên vật tư</th>
+                    <th style={{ width: '100px', textAlign: 'center', padding: '12px 8px', borderRight: '1px solid rgba(255,255,255,0.3)', textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: 'bold' }}>Số lượng</th>
+                    <th style={{ width: '50px', textAlign: 'center', padding: '12px 8px', textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: 'bold' }}></th>
                   </tr>
                 </thead>
                 <tbody>
                   {selectedItems.map((item, index) => (
-                    <tr key={item.vat_tu_id}>
-                      <td data-label="TT" style={{ textAlign: 'center' }}>{index + 1}</td>
-                      <td data-label="Tên vật tư" style={{ fontWeight: '500' }}>{item.ten_vtyt}</td>
-                      <td data-label="ĐVT">{item.dvt}</td>
-                      <td data-label="Số lượng">
+                    <tr key={item.vat_tu_id} style={{ borderBottom: '1px solid #d1d5db', backgroundColor: 'white' }}>
+                      <td style={{ textAlign: 'center', padding: '12px 8px', borderRight: '1px solid #d1d5db', fontWeight: '600', color: '#111827' }}>{index + 1}</td>
+                      <td style={{ padding: '12px 12px', borderRight: '1px solid #d1d5db' }}>
+                        <div style={{ fontWeight: '500', color: '#1f2937' }}>{item.ten_vtyt}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>ĐVT: {item.dvt}</div>
+                      </td>
+                      <td style={{ padding: '0', borderRight: '1px solid #d1d5db', textAlign: 'center', verticalAlign: 'middle' }}>
                         <input 
                           type="number" 
-                          className="form-control" 
                           value={item.so_luong} 
                           onChange={(e) => handleUpdateSoLuong(item.vat_tu_id, e.target.value)}
-                          style={{ padding: '6px' }}
+                          style={{ width: '100%', height: '100%', minHeight: '44px', padding: '12px 8px', border: 'none', textAlign: 'center', color: '#0d9488', fontWeight: 'bold', fontSize: '1.1rem', outline: 'none', backgroundColor: 'transparent' }}
+                          placeholder="0"
                           min="0.01"
                           step="any"
                           required
                         />
                       </td>
-                      <td data-label="Xóa" style={{ textAlign: 'center' }}>
-                        <button type="button" className="btn btn-sm btn-icon-only" style={{ color: 'var(--danger)', background: 'transparent', boxShadow: 'none' }} onClick={() => handleRemoveItem(item.vat_tu_id)}>
-                          <Trash2 size={16} />
+                      <td style={{ padding: '8px', textAlign: 'center', verticalAlign: 'middle' }}>
+                        <button type="button" onClick={() => handleRemoveItem(item.vat_tu_id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                          <Trash2 size={18} />
                         </button>
                       </td>
                     </tr>
