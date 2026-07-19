@@ -119,7 +119,7 @@ export default function AppLayout() {
             <User size={16} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>{profile?.username || 'user'}</span>
+            <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>{profile?.ho_ten || 'User'}</span>
           </div>
         </div>
         <div className="mobile-logo" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -185,13 +185,19 @@ export default function AppLayout() {
                 </div>
               </div>
               
-              <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '12px', backgroundColor: '#f8fafc' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowPasswordModal(false)}>
-                  Hủy
+              <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc' }}>
+                <button type="button" className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={handleLogout}>
+                  <LogOut size={16} />
+                  <span className="hide-mobile">Đăng xuất</span>
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={passwordLoading}>
-                  {passwordLoading ? 'Đang lưu...' : 'Lưu thay đổi'}
-                </button>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowPasswordModal(false)}>
+                    Hủy
+                  </button>
+                  <button type="submit" className="btn btn-primary" disabled={passwordLoading}>
+                    {passwordLoading ? 'Đang lưu...' : 'Lưu'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

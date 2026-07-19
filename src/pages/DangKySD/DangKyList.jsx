@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import { Plus, Check, Search, Calendar, User } from 'lucide-react';
+import { Plus, Check, Search, Calendar, User, Edit, Trash2 } from 'lucide-react';
+import { useAuth } from '../../auth/AuthContext';
 
 export default function DangKyList() {
+  const { profile } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   
@@ -77,7 +79,22 @@ export default function DangKyList() {
       if (error) throw error;
       fetchRegistrations();
     } catch (err) {
-      alert('Lỗi cập nhật lĩnh vật tư: ' + err.message);
+      console.error('Lỗi khi cập nhật:', err);
+      alert('Đã xảy ra lỗi khi lĩnh bù');
+    }
+  };
+
+  const handleDeleteReg = async (id) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa đăng ký này?')) return;
+    try {
+      const { error } = await supabase
+        .from('dang_ky_sd')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      fetchRegistrations();
+    } catch (err) {
+      alert('Lỗi khi xóa đăng ký: ' + err.message);
     }
   };
 
@@ -198,14 +215,37 @@ export default function DangKyList() {
                     </td>
                     <td data-label="Hành động">
                       {!reg.da_linh ? (
-                        <button 
-                          className="btn btn-primary btn-sm"
-                          style={{ padding: '4px 8px', gap: '4px' }}
-                          onClick={() => handleMarkAsLinh(reg.id)}
-                        >
-                          <Check size={14} />
-                          <span>Lĩnh bù</span>
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          <button 
+                            className="btn btn-primary btn-sm"
+                            style={{ padding: '4px 8px', gap: '4px' }}
+                            onClick={() => handleMarkAsLinh(reg.id)}
+                            title="Đánh dấu đã lĩnh bù"
+                          >
+                            <Check size={14} />
+                            <span className="hide-mobile">Lĩnh bù</span>
+                          </button>
+                          
+                          {profile?.id === reg.nguoi_dang_ky && (
+                            <>
+                              <button 
+                                className="btn btn-secondary btn-sm btn-icon-only"
+                                onClick={() => navigate(`/dang-ky-su-dung/moi?editId=${reg.id}`)}
+                                title="Sửa"
+                              >
+                                <Edit size={14} />
+                              </button>
+                              <button 
+                                className="btn btn-outline btn-sm btn-icon-only"
+                                style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                                onClick={() => handleDeleteReg(reg.id)}
+                                title="Xóa"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       ) : (
                         <span style={{ fontSize: '0.8rem', color: 'var(--success)', fontWeight: '500' }}>Hoàn thành</span>
                       )}

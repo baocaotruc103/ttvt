@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../auth/AuthContext';
 import { ArrowLeft, Save } from 'lucide-react';
@@ -8,16 +8,21 @@ export default function DangKyForm() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('editId');
+
   const [loading, setLoading] = useState(false);
   const [danhMuc, setDanhMuc] = useState([]);
   const [vatTuId, setVatTuId] = useState('');
   const [selectedUnit, setSelectedUnit] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
   const [soLuong, setSoLuong] = useState('');
   const [ghiChu, setGhiChu] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
-    const fetchActiveDanhMuc = async () => {
+    const fetchActiveDanhMucAndEditData = async () => {
       try {
         const { data, error } = await supabase
           .from('danh_muc')
@@ -27,20 +32,34 @@ export default function DangKyForm() {
         
         if (error) throw error;
         setDanhMuc(data || []);
+
+        // Nếu đang chế độ sửa, lấy dữ liệu phiếu cũ
+        if (editId) {
+          const { data: editData, error: editError } = await supabase
+            .from('dang_ky_sd')
+            .select('*')
+            .eq('id', editId)
+            .single();
+          
+          if (editError) throw editError;
+          if (editData) {
+            setVatTuId(editData.vat_tu_id);
+            setSoLuong(editData.so_luong);
+            setGhiChu(editData.ghi_chu || '');
+            const item = (data || []).find(d => d.id === editData.vat_tu_id);
+            setSelectedUnit(item ? item.dvt : '');
+            setSearchTerm(item ? item.ten_vtyt : '');
+          }
+        }
       } catch (err) {
-        console.error('Error fetching supplies for registration:', err);
+        console.error('Error fetching data for registration form:', err);
       }
     };
 
-    fetchActiveDanhMuc();
-  }, []);
+    fetchActiveDanhMucAndEditData();
+  }, [editId]);
 
-  const handleVatTuChange = (e) => {
-    const id = e.target.value;
-    setVatTuId(id);
-    const item = danhMuc.find(item => item.id === id);
-    setSelectedUnit(item ? item.dvt : '');
-  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,11 +86,22 @@ export default function DangKyForm() {
         ghi_chu: ghiChu.trim()
       };
 
-      const { error } = await supabase
-        .from('dang_ky_sd')
-        .insert(payload);
-
-      if (error) throw error;
+      if (editId) {
+        const { error } = await supabase
+          .from('dang_ky_sd')
+          .update({
+            vat_tu_id: vatTuId,
+            so_luong: Number(soLuong),
+            ghi_chu: ghiChu.trim()
+          })
+          .eq('id', editId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('dang_ky_sd')
+          .insert(payload);
+        if (error) throw error;
+      }
       navigate('/dang-ky-su-dung');
     } catch (err) {
       setErrorMsg(err.message || 'Lỗi xảy ra khi đăng ký sử dụng');
@@ -87,8 +117,8 @@ export default function DangKyForm() {
           <ArrowLeft size={18} />
         </button>
         <div>
-          <h2>Đăng ký Sử dụng Vật tư</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Đăng ký lượng vật tư đã sử dụng chờ lĩnh bù</p>
+          <h2>{editId ? 'Sửa Đăng ký Sử dụng' : 'Đăng ký Sử dụng Vật tư'}</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{editId ? 'Chỉnh sửa thông tin phiếu đăng ký' : 'Đăng ký lượng vật tư đã sử dụng chờ lĩnh bù'}</p>
         </div>
       </div>
 
@@ -96,20 +126,52 @@ export default function DangKyForm() {
         {errorMsg && <div className="login-error" style={{ marginBottom: '16px' }}>{errorMsg}</div>}
 
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
+          <div className="form-group" style={{ position: 'relative' }}>
             <label htmlFor="select-vattu">Chọn vật tư y tế *</label>
-            <select
+            <input
               id="select-vattu"
+              type="text"
               className="form-control"
-              value={vatTuId}
-              onChange={handleVatTuChange}
-              required
-            >
-              <option value="">-- Chọn vật tư cần lĩnh --</option>
-              {danhMuc.map(item => (
-                <option key={item.id} value={item.id}>{item.ten_vtyt}</option>
-              ))}
-            </select>
+              placeholder="Nhập tên vật tư để tìm kiếm..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setShowDropdown(true);
+                if (vatTuId) {
+                  setVatTuId('');
+                  setSelectedUnit('');
+                }
+              }}
+              onFocus={() => setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+              required={!vatTuId}
+            />
+            {showDropdown && (
+              <ul style={{
+                position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
+                background: 'white', border: '1px solid var(--border)', borderRadius: '8px',
+                maxHeight: '200px', overflowY: 'auto', listStyle: 'none', padding: 0, margin: '4px 0 0 0',
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+              }}>
+                {danhMuc.filter(item => item.ten_vtyt.toLowerCase().includes(searchTerm.toLowerCase())).map(item => (
+                  <li 
+                    key={item.id} 
+                    style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                    onClick={() => {
+                      setVatTuId(item.id);
+                      setSearchTerm(item.ten_vtyt);
+                      setSelectedUnit(item.dvt);
+                      setShowDropdown(false);
+                    }}
+                  >
+                    {item.ten_vtyt}
+                  </li>
+                ))}
+                {danhMuc.filter(item => item.ten_vtyt.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && (
+                  <li style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>Không tìm thấy vật tư phù hợp</li>
+                )}
+              </ul>
+            )}
           </div>
 
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>

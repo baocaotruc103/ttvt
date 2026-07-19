@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }) => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('username', username)
+        .ilike('username', username)
         .eq('mat_khau', password);
         
       if (error) throw error;
