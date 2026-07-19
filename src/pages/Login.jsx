@@ -91,6 +91,7 @@ export default function Login() {
           >
             {authLoading ? 'Đang xác thực...' : 'Đăng nhập'}
           </button>
+        </form>
       </div>
     </div>
   );
