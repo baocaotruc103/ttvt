@@ -233,11 +233,11 @@ export default function DangKyList() {
                       {reg.ghi_chu || '-'}
                     </td>
                     <td data-label="Danh sách Vật tư">
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.9rem' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.9rem', width: '100%' }}>
                         {reg.items.map((item, idx) => (
-                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span>- {item.ten_vtyt}</span>
-                            <span style={{ fontWeight: '600' }}>{item.so_luong} {item.dvt}</span>
+                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: idx < reg.items.length - 1 ? '1px dashed #e2e8f0' : 'none', paddingBottom: idx < reg.items.length - 1 ? '6px' : '0' }}>
+                            <span style={{ flex: 1, paddingRight: '12px' }}>&bull; {item.ten_vtyt}</span>
+                            <span style={{ fontWeight: 'bold', color: '#0f766e', whiteSpace: 'nowrap' }}>{item.so_luong} {item.dvt}</span>
                           </div>
                         ))}
                       </div>
